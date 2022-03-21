@@ -1,14 +1,10 @@
 ---
-title: API Reference
+title: Pick a Day Backend
 
 language_tabs: # must be one of https://git.io/vQNgJ
-  - shell
-  - ruby
-  - python
   - javascript
 
 toc_footers:
-  - <a href='#'>Sign Up for a Developer Key</a>
   - <a href='https://github.com/slatedocs/slate'>Documentation Powered by Slate</a>
 
 includes:
@@ -20,226 +16,140 @@ code_clipboard: true
 
 meta:
   - name: description
-    content: Documentation for the Kittn API
+    content: Documentation for the pickaday API
 ---
 
 # Introduction
 
-Welcome to the Kittn API! You can use our API to access Kittn API endpoints, which can get information on various cats, kittens, and breeds in our database.
+Pick a day is a simple app event based. The main goal of the API is to store plausible dates for an event, allowing partecipants to choose whether they are available or not in a day of the main event. It is therefore possiple to see who can join when in a selected event.
 
-We have language bindings in Shell, Ruby, Python, and JavaScript! You can view code examples in the dark area to the right, and you can switch the programming language of the examples with the tabs in the top right.
+There are two main type of objects in pickaday:
+* Events
+* Partecipants
 
-This example API documentation page was created with [Slate](https://github.com/slatedocs/slate). Feel free to edit it and use it as a base for your own API's documentation.
+An **Event** is defined by:
+
+* a unique ID
+* the days in which it could take place
+* the name of the event
+
+A **Partecipant** is defined by:
+
+* Its name
+* the event it partecipate to
+
+<aside class="notice">
+Multiple events with the same name and dates can be created without problems.
+</aside>
 
 # Authentication
 
-> To authorize, use this code:
+This API does not require any previous authorization. Its endpoint can be accessed freely.
 
-```ruby
-require 'kittn'
+# Event
 
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-```
+An Event must follows some rules in order to exists:
 
-```python
-import kittn
+* No event is allowed to contains more than 14 distinct dates
+* It must contain at least one day
+* Its name length must be inside the range [3, 25] characters.
 
-api = kittn.authorize('meowmeowmeow')
-```
+## Creating an Event
 
-```shell
-# With shell, you can just pass the correct header with each request
-curl "api_endpoint_here" \
-  -H "Authorization: meowmeowmeow"
+```javascript
+const axios = require('axios');
+const newEvent = await axios.post('https://pick-a-day.herokuapp.com/api/v1/event', {
+  days: ["01/02/2014","02/02/2014","05/02/2014"],
+  name: "My Event Name"
+});
 ```
 
 ```javascript
-const kittn = require('kittn');
-
-let api = kittn.authorize('meowmeowmeow');
+const axios = require('axios');
+const newEvent = await axios.post('https://pick-a-day.herokuapp.com/api/v1/event', {
+  days: "01/02/2014,02/02/2014,05/02/2014"
+  name: "My Event Name"
+})
 ```
 
-> Make sure to replace `meowmeowmeow` with your API key.
+> The above commands returns JSON structured like this in both scenarios:
 
-Kittn uses API keys to allow access to the API. You can register a new Kittn API key at our [developer portal](http://example.com/developers).
+```json
+{
+  "_id": "6215257d486c758bc7180462",
+  "name": "My Event Name",
+  "days": ["1/2/2014","2/2/2014","5/2/2014"]
+}
+```
 
-Kittn expects for the API key to be included in all API requests to the server in a header that looks like the following:
+This endpoint allows to create an [Event](#Event) starting from its name and the data with it associated.
 
-`Authorization: meowmeowmeow`
+### HTTP Request
+
+`POST https://pick-a-day.herokuapp.com/api/v1/event`
+
+### Query Payload
+
+Parameter  | Description | Constraints
+---------  | ----------- | -----------
+days | It must be either an array of Strings in format ```gg/mm/aaaa``` or a single String composed by ```gg/mm/aaaa``` entries separated by commas | At least one day and no more than 14
+name | A String containing the name of the event | The length of the string cannot exceed 25 characters and be less than 3 characters
+
+
+### Response Payload
+Parameter  | Description 
+---------  | -----------
+_id | A String of the event's ID
+days | An arry of Strings in format ```gg/mm/aaaa``` containing all the dates of this event
+name | A String containing the name of the event 
 
 <aside class="notice">
-You must replace <code>meowmeowmeow</code> with your personal API key.
+The <code>_id</code> returned by the endpoint is very important, it will allow to search for a specific event.
 </aside>
 
-# Kittens
-
-## Get All Kittens
-
-```ruby
-require 'kittn'
-
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.get
-```
-
-```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-api.kittens.get()
-```
-
-```shell
-curl "http://example.com/api/kittens" \
-  -H "Authorization: meowmeowmeow"
-```
+## Get a specific event
 
 ```javascript
-const kittn = require('kittn');
+const axios = require('axios');
 
-let api = kittn.authorize('meowmeowmeow');
-let kittens = api.kittens.get();
+const event = await axios.get('https://pick-a-day.herokuapp.com/api/v1/event/6215257d486c758bc7180462');
 ```
 
 > The above command returns JSON structured like this:
 
 ```json
-[
-  {
-    "id": 1,
-    "name": "Fluffums",
-    "breed": "calico",
-    "fluffiness": 6,
-    "cuteness": 7
-  },
-  {
-    "id": 2,
-    "name": "Max",
-    "breed": "unknown",
-    "fluffiness": 5,
-    "cuteness": 10
+{
+  "name": "My Event Name",
+  "days": ["1/2/2014","2/2/2014","5/2/2014"],
+  "partecipants": {
+    "john": ["2/2/2014","5/2/2014"],
+    "patrick": ["2/2/2014"],
+    "peter": ["1/2/2014","5/2/2014"]
   }
-]
-```
-
-This endpoint retrieves all kittens.
-
-### HTTP Request
-
-`GET http://example.com/api/kittens`
-
-### Query Parameters
-
-Parameter | Default | Description
---------- | ------- | -----------
-include_cats | false | If set to true, the result will also include cats.
-available | true | If set to false, the result will include kittens that have already been adopted.
-
-<aside class="success">
-Remember — a happy kitten is an authenticated kitten!
-</aside>
-
-## Get a Specific Kitten
-
-```ruby
-require 'kittn'
-
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.get(2)
-```
-
-```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-api.kittens.get(2)
-```
-
-```shell
-curl "http://example.com/api/kittens/2" \
-  -H "Authorization: meowmeowmeow"
-```
-
-```javascript
-const kittn = require('kittn');
-
-let api = kittn.authorize('meowmeowmeow');
-let max = api.kittens.get(2);
-```
-
-> The above command returns JSON structured like this:
-
-```json
-{
-  "id": 2,
-  "name": "Max",
-  "breed": "unknown",
-  "fluffiness": 5,
-  "cuteness": 10
 }
 ```
 
-This endpoint retrieves a specific kitten.
-
-<aside class="warning">Inside HTML code blocks like this one, you can't use Markdown, so use <code>&lt;code&gt;</code> blocks to denote code.</aside>
+This endpoint retrieves a specific event whose ID matches the one provided.
 
 ### HTTP Request
 
-`GET http://example.com/kittens/<ID>`
+`GET https://pick-a-day.herokuapp.com/api/v1/event/:id`
 
 ### URL Parameters
 
 Parameter | Description
 --------- | -----------
-ID | The ID of the kitten to retrieve
+id | The ID of the event to retrieve
 
-## Delete a Specific Kitten
 
-```ruby
-require 'kittn'
+### Response Payload
 
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.delete(2)
-```
+Parameter  | Description 
+---------  | -----------
+days | An arry of Strings in format ```gg/mm/aaaa``` containing all the dates of this event
+name | A String containing the name of the event 
+partecipant | a map containing all of the entries ```partecipant-availability```
 
-```python
-import kittn
+## Delete an Event
 
-api = kittn.authorize('meowmeowmeow')
-api.kittens.delete(2)
-```
-
-```shell
-curl "http://example.com/api/kittens/2" \
-  -X DELETE \
-  -H "Authorization: meowmeowmeow"
-```
-
-```javascript
-const kittn = require('kittn');
-
-let api = kittn.authorize('meowmeowmeow');
-let max = api.kittens.delete(2);
-```
-
-> The above command returns JSON structured like this:
-
-```json
-{
-  "id": 2,
-  "deleted" : ":("
-}
-```
-
-This endpoint deletes a specific kitten.
-
-### HTTP Request
-
-`DELETE http://example.com/kittens/<ID>`
-
-### URL Parameters
-
-Parameter | Description
---------- | -----------
-ID | The ID of the kitten to delete
-
+There is no need to delete an Event. Once the most recent available date will be passed by more than 10 days it will be automatically deleted.
