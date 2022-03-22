@@ -9,6 +9,7 @@ toc_footers:
 
 includes:
   - event
+  - partecipant
   - errors
 
 search: true
