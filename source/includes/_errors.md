@@ -1,22 +1,48 @@
 # Errors
 
-<aside class="notice">
-This error section is stored in a separate file in <code>includes/_errors.md</code>. Slate allows you to optionally separate out your docs into many files...just save them to the <code>includes</code> folder and add them to the top of your <code>index.md</code>'s frontmatter. Files are included in the order listed.
-</aside>
+The pickday API uses most of the standard error codes. 
+If any of your requests leads to an error it will be reported as such with its HTTP status code.
 
-The Kittn API uses the following error codes:
+When a response singals an error, it will always come with a JSON response like: ```{ msg: "Meaningful explanation of what has gone wrong }```
+
+Please, always look for the ```.msg``` property in the response, as it will be a meaningful explanation of what has gone wrong in your request.
+
+```javascript
+const axios = require('axios');
+const newEvent = await axios.post('https://pick-a-day.herokuapp.com/api/v1/event', {
+  days: ["01/02/2014","02/02/2014","05/02/2014"],
+  name: "sa" // The even name is too short!
+});
+```
+
+> The response would be 400 Bad requests and the following JSON payload:
+
+```json
+{
+  "msg": "Path `name` (`sa`) is shorter than the minimum allowed length (3)."
+}
+```
 
 
-Error Code | Meaning
----------- | -------
-400 | Bad Request -- Your request is invalid.
-401 | Unauthorized -- Your API key is wrong.
-403 | Forbidden -- The kitten requested is hidden for administrators only.
-404 | Not Found -- The specified kitten could not be found.
-405 | Method Not Allowed -- You tried to access a kitten with an invalid method.
-406 | Not Acceptable -- You requested a format that isn't json.
-410 | Gone -- The kitten requested has been removed from our servers.
-418 | I'm a teapot.
-429 | Too Many Requests -- You're requesting too many kittens! Slow down!
-500 | Internal Server Error -- We had a problem with our server. Try again later.
-503 | Service Unavailable -- We're temporarily offline for maintenance. Please try again later.
+```javascript
+const axios = require('axios');
+const partecipant = await axios.delete('https://pick-a-day.herokuapp.com/api/v1/partecipants', {
+  name: "Charlie",
+  eventId: "6215257d486c758bc7180462"
+});
+```
+
+> Assuming the device from which the deletion was attempted and the one which created the partecipant where different
+> The response would be 409 Conflict with the following JSON payload:
+
+```json
+{
+  "msg": "Cannot delete partecipant dates from different IP"
+}
+```
+
+### Response Payload
+
+Parameter  | Description 
+---------  | -----------
+msg | A String containing an explanation of why the request failed
